@@ -4,7 +4,7 @@
 typedef struct
 {
     float azimuth;
-    float inclination;
+    float altitude;
 } orientation_t;
 
 #endif
