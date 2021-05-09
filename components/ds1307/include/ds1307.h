@@ -29,6 +29,7 @@
 #define SQWE_MASK    0xef
 #define OUT_MASK     0x7
 
+#define TIME_ZONE_DS1307    7
 uint8_t bcd2dec(uint8_t val);
 uint8_t dec2bcd(uint8_t val);
 esp_err_t update_register(i2c_dev_t *dev, uint8_t reg, uint8_t mask, uint8_t val);
