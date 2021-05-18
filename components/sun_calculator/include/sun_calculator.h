@@ -1,10 +1,16 @@
 #ifndef __SUN_CALCULATOR__
 #define __SUN_CALCULATOR__
 
-#include <types.h>
+// #include <types.h>
 #include "orientation.h"
 #include "math.h"
 #include "time.h"
+#include "ds1307.h"
+#include "esp_log.h"
+
+// for ds1307
+#define CONFIG_SCL_GPIO		15
+#define CONFIG_SDA_GPIO		16
 
 #define PI 3.14159265358979323846
 #define rad PI/180
@@ -21,6 +27,9 @@ typedef struct coords{
     float ra;
 }coords_t;
 
+
+i2c_dev_t init_ds1307();
+time_t get_time_ds1307();
 orientation_t get_sun_orientation(time_t time, float latitude, float longitude);
 float toDays(time_t date);
 float toJulian (time_t date);
