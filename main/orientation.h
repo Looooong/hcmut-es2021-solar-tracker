@@ -1,10 +1,10 @@
-#ifndef __ORIENTATION__
-#define __ORIENTATION__
+#ifndef ORIENTATION_H
+#define ORIENTATION_H
 
 typedef struct
 {
     float azimuth;
-    float altitude;
+    float inclination;
 } orientation_t;
 
-#endif
+#endif // ORIENTATION_H

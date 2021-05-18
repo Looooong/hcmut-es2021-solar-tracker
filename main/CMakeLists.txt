@@ -1,6 +1,6 @@
 idf_component_register(
-    SRCS "main.c"
+    SRCS "sun_calculator.c" "main.c"
     INCLUDE_DIRS ""
-    REQUIRES sun_calculator 
+    REQUIRES sun_calc
     REQUIRES spi_flash
 )
