@@ -32,7 +32,7 @@ const interval = setInterval(() => {
 
 wss.on('close', () => clearInterval(interval));
 
-const port = parseInt(process.env['PORT'] ?? throwException('Specify PORT env before starting the server!'));
+const port = parseInt(process.env['PORT'] ?? '8080');
 
 console.log(`Server is listening to port ${port}`);
 server.listen(port);
