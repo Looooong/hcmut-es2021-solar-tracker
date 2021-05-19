@@ -1,18 +1,21 @@
 #include <ds1307.h>
 #include <esp_log.h>
-#include <esp_spi_flash.h>
 #include <esp_system.h>
+#include <esp_websocket_client.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <stdio.h>
+#include "cloud_client.h"
 #include "sun_calculator.h"
 
 i2c_dev_t init_ds1307();
 time_t get_time_ds1307(i2c_dev_t *dev);
+static void cloud_client_data_handler(const char *data, int length);
 
 void app_main(void)
 {
     i2c_dev_t dev = init_ds1307();
+    cloud_client_init(cloud_client_data_handler);
 
     while (1)
     {
@@ -21,8 +24,14 @@ void app_main(void)
         printf("Time by Seconds : %ld\n", time);
         printf("azimuth = %f \ninclination = %f\n", orient.azimuth, orient.inclination);
         fflush(stdout);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        cloud_client_send("Hello from client", 18, 10000);
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
+}
+
+static void cloud_client_data_handler(const char *data, int length)
+{
+    ESP_LOGI("Cloud Client", "Received: %.*s", length, data);
 }
 
 i2c_dev_t init_ds1307()

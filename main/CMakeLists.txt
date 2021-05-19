@@ -1,6 +1,5 @@
 idf_component_register(
-    SRCS "sun_calculator.c" "main.c"
+    SRCS "cloud_client.c" "sun_calculator.c" "main.c"
     INCLUDE_DIRS ""
-    REQUIRES sun_calc
-    REQUIRES spi_flash
+    REQUIRES esp_websocket_client ds1307 sun_calc
 )
