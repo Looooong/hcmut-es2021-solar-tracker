@@ -20,7 +20,9 @@ server.on('upgrade', (request: IncomingMessage, socket: Socket, buffer: Buffer) 
     }
 });
 
-wss.on('connection', ws => {
+wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
+    console.log(`A client connected from ${request.socket.remoteAddress ?? "unkown address"}.`);
+
     ws.on('message', message => console.log(`Received: ${message}`));
 });
 

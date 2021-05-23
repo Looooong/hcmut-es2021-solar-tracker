@@ -27,5 +27,8 @@ void cloud_client_init(cloud_client_data_handler_t data_handler)
 
 void cloud_client_send(const char *data, int length, TickType_t timeout)
 {
-    esp_websocket_client_send_text(client, data, length, timeout);
+    if (esp_websocket_client_send_text(client, data, length, timeout) != ESP_OK)
+    {
+        ESP_LOGE("Cloud Client", "Cannot send text data!");
+    }
 }
