@@ -3,7 +3,7 @@
 #include "cloud_client.h"
 
 const esp_websocket_client_config_t config = {
-    .uri = "ws://localhost:8080/ws"};
+    .uri = "ws://192.168.22.11:8080/ws"};
 esp_websocket_client_handle_t client;
 cloud_client_data_handler_t external_data_handler;
 

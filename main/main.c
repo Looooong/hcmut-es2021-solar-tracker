@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include "cloud_client.h"
 #include "sun_calculator.h"
+#include "wifi_connector.h"
+#include "driver/adc.h"
 
 i2c_dev_t init_ds1307();
 time_t get_time_ds1307(i2c_dev_t *dev);
@@ -14,6 +16,8 @@ static void cloud_client_data_handler(const char *data, int length);
 
 void app_main(void)
 {
+    ESP_ERROR_CHECK( nvs_flash_init() );
+    initialise_wifi();
     i2c_dev_t dev = init_ds1307();
     cloud_client_init(cloud_client_data_handler);
 
@@ -56,12 +60,10 @@ time_t get_time_ds1307(i2c_dev_t *dev)
     }
     time.tm_year = time.tm_year - 1900;
     time.tm_hour = time.tm_hour - TIME_ZONE_DS1307;
-    // printf( "time.tm_sec=%d",time.tm_sec);
-    // printf( "time.tm_min=%d",time.tm_min);
-    // printf( "time.tm_hour=%d",time.tm_hour);
-    // printf( "time.tm_wday=%d",time.tm_wday);
-    // printf( "time.tm_mday=%d",time.tm_mday);
-    // printf( "time.tm_mon=%d",time.tm_mon);
-    // printf( "time.tm_year=%d",time.tm_year);
     return mktime(&time);
+}
+void get_adc_value( ){
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
+    int val = adc1_get_raw(ADC1_CHANNEL_0);
 }
