@@ -16,7 +16,7 @@ server.on('upgrade', (request: IncomingMessage, socket: Socket, buffer: Buffer) 
     const pathname = url.parse(request.url ?? throwException('Request does not have an URL!')).pathname;
 
     if (pathname == '/ws') {
-        wss.handleUpgrade(request, socket, buffer, ws => ws.emit('connection', ws, request));
+        wss.handleUpgrade(request, socket, buffer, ws => wss.emit('connection', ws, request));
     }
 });
 
