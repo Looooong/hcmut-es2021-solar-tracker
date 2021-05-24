@@ -1,3 +1,4 @@
+#include <cJSON.h>
 #include <ds1307.h>
 #include <esp_log.h>
 #include <esp_system.h>
@@ -7,6 +8,21 @@
 #include <stdio.h>
 #include "cloud_client.h"
 #include "sun_calculator.h"
+
+typedef enum control_mode_t
+{
+    AUTOMATIC,
+    MANUAL
+} control_mode_t;
+
+typedef struct config_t
+{
+    control_mode_t control_mode;
+    orientation_t manual_orientation;
+}
+config_t;
+
+config_t config;
 
 i2c_dev_t init_ds1307();
 time_t get_time_ds1307(i2c_dev_t *dev);
@@ -31,7 +47,30 @@ void app_main(void)
 
 static void cloud_client_data_handler(const char *data, int length)
 {
-    ESP_LOGI("Cloud Client", "Received: %.*s", length, data);
+    ESP_LOGI("Cloud Client", "Received:\n%.*s", length, data);
+
+    char *json_data = (char *)malloc(length + 1);
+
+    strncpy(json_data, data, length);
+    json_data[length] = '\0';
+
+    cJSON *root = cJSON_Parse(json_data);
+    cJSON *event = cJSON_GetObjectItem(root, "event");
+
+    if (strcmp(event->valuestring, "UPDATE_CONFIG") == 0)
+    {
+        cJSON *payload = cJSON_GetObjectItem(root, "payload");
+
+        cJSON *control_mode = cJSON_GetObjectItem(payload, "controlMode");
+        config.control_mode = control_mode->valueint > 0 ? MANUAL : AUTOMATIC;
+
+        cJSON *manual_orientation = cJSON_GetObjectItem(payload, "manualOrientation");
+        config.manual_orientation.azimuth = cJSON_GetObjectItem(manual_orientation, "azimuth")->valuedouble;
+        config.manual_orientation.inclination = cJSON_GetObjectItem(manual_orientation, "inclination")->valuedouble;
+    }
+
+    cJSON_Delete(root);
+    free(json_data);
 }
 
 i2c_dev_t init_ds1307()
