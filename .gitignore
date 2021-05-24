@@ -29,3 +29,6 @@ yarn-error.log*
 /client/Library/
 /client/Logs/
 /client/Temp/
+/client/*.csproj
+/client/*.sln
+/client/[Oo]bj/

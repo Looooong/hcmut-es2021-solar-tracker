@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto';
 import express from 'express';
 import http, { IncomingMessage } from 'http';
 import { Socket } from 'net';
@@ -10,7 +11,7 @@ const wss = new WebSocket.Server({ noServer: true });
 
 enum AppEvent {
     UpdateConfig = "UPDATE_CONFIG",
-    UpdateStates = "UPDATE_STATES",
+    UpdateState = "UPDATE_STATE",
 }
 
 enum ControlMode {
@@ -80,10 +81,10 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
         }));
     });
 
-    ws.on(AppEvent.UpdateStates, (new_states: SystemState[]) => {
+    ws.on(AppEvent.UpdateState, (new_state: SystemState) => {
         ws.send(JSON.stringify({
-            event: AppEvent.UpdateStates,
-            payload: new_states,
+            event: AppEvent.UpdateState,
+            payload: new_state,
         }))
     });
 
@@ -101,12 +102,23 @@ wss.on(AppEvent.UpdateConfig, (ws: WebSocket, new_config: ControlConfig) => {
     }
 });
 
-wss.on(AppEvent.UpdateStates, (ws: WebSocket, new_states: SystemState[]) => {
+wss.on(AppEvent.UpdateState, (ws: WebSocket, new_state: SystemState) => {
     for (let client of wss.clients) {
         if (client == ws) continue;
 
-        client.emit(AppEvent.UpdateStates, new_states);
+        client.emit(AppEvent.UpdateState, new_state);
     }
+});
+
+wss.on('FAKE_DATA', (ws: WebSocket) => {
+    let fakeDataInterval = setInterval(() => {
+        ws.emit(AppEvent.UpdateState, {
+            timestamp: Date.now() / 1000,
+            solarPanelVoltage: randomInt(10)
+        } as SystemState);
+    }, 1000);
+
+    ws.on('close', () => clearInterval(fakeDataInterval));
 });
 
 const port = parseInt(process.env['PORT'] ?? '8080');
