@@ -9,6 +9,8 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ noServer: true });
 
+app.use(express.static('public'));
+
 enum AppEvent {
     UpdateConfig = "UPDATE_CONFIG",
     UpdateState = "UPDATE_STATE",
@@ -26,7 +28,11 @@ interface ControlConfig {
 
 interface SystemState {
     timestamp: number,
+    motorOrientation: Orientation,
+    platformOrientation: Orientation,
+    solarPanelOrientation: Orientation,
     solarPanelVoltage: number,
+    sunOrientation: Orientation,
 }
 
 interface Orientation {

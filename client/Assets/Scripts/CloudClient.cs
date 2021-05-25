@@ -1,4 +1,7 @@
 ﻿using BestHTTP.WebSocket;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 public class CloudClient : MonoBehaviour
@@ -7,6 +10,23 @@ public class CloudClient : MonoBehaviour
     public SolarPanelStatistics solarPanelStatistics;
 
     WebSocket _ws;
+
+    public void UpdateConfig(ControlConfig config)
+    {
+        if (!_ws.IsOpen)
+        {
+            Debug.LogWarning("WebSocket connection is not established.");
+            return;
+        }
+
+        var payload = new ControlConfigWrapper
+        {
+            @event = Event.UPDATE_CONFIG,
+            payload = config,
+        };
+
+        _ws.Send(JsonConvert.SerializeObject(payload));
+    }
 
     void Awake()
     {
@@ -28,19 +48,19 @@ public class CloudClient : MonoBehaviour
             Debug.Log($"Received message from WebSocket server:\n{message}");
 
             var eventWrapper = JsonUtility.FromJson<EventWrapper>(message);
+            var root = JToken.Parse(message);
+            var @event = root["event"];
 
-            if (System.Enum.TryParse(eventWrapper.@event, out Event @event))
+            if (@event != null)
             {
-                switch (@event)
+                switch (@event.ToObject<Event>())
                 {
                     case Event.UPDATE_CONFIG:
-                        var config = JsonUtility.FromJson<ControlConfigWrapper>(message).payload;
-                        solarPanelController.UpdateConfig(config);
+                        solarPanelController.UpdateConfig(root["payload"].ToObject<ControlConfig>());
                         break;
 
                     case Event.UPDATE_STATE:
-                        var state = JsonUtility.FromJson<SystemStateWrapper>(message).payload;
-                        solarPanelStatistics.AddSystemState(state);
+                        solarPanelStatistics.AddSystemState(root["payload"].ToObject<SystemState>());
                         break;
                 }
             }
@@ -71,11 +91,15 @@ public class CloudClient : MonoBehaviour
 
     struct ControlConfigWrapper
     {
+        [JsonConverter(typeof(StringEnumConverter))]
+        public Event @event;
         public ControlConfig payload;
     }
 
     struct SystemStateWrapper
     {
+        [JsonConverter(typeof(StringEnumConverter))]
+        public Event @event;
         public SystemState payload;
     }
 }
