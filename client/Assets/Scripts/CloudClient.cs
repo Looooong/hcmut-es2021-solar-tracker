@@ -9,7 +9,7 @@ public class CloudClient : MonoBehaviour
 #if UNITY_EDITOR
     const string WebSocketURL = "ws://localhost:8080/ws";
 #else
-    const string WebSocketURL = "ws://hcmut-es2021-solar-tracker.herokuapp.com/ws";
+    const string WebSocketURL = "wss://hcmut-es2021-solar-tracker.herokuapp.com/ws";
 #endif
     public SolarPanelController solarPanelController;
 
