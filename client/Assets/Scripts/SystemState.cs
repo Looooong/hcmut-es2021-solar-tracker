@@ -1,7 +1,7 @@
 ﻿[System.Serializable]
 public struct SystemState
 {
-    public float timestamp;
+    public long timestamp;
     public float solarPanelVoltage;
     public Orientation solarPanelOrientation;
 }

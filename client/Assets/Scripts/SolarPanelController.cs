@@ -8,6 +8,11 @@ public class SolarPanelController : MonoBehaviour
     public ControlConfig controlConfig;
     public CloudClient cloudClient;
 
+    [Header("Motors")]
+    public Transform motor1;
+    public Transform motor2;
+    public float smoothTime = .1f;
+
     [Header("UI")]
     public TMP_Dropdown modeDropdown;
     public TMP_InputField azimuthInputField;
@@ -17,13 +22,19 @@ public class SolarPanelController : MonoBehaviour
 
     [Header("Charts")]
     public GraphChart solarPanelVoltageChart;
+    public GraphChart solarPanelAzimuthChart;
+    public GraphChart solarPanelInclinationChart;
 
+    Orientation _lastOrientation;
     SystemState _currentState;
+    Orientation _angularVelocity;
 
     public void AddSystemState(SystemState state)
     {
-        var time = DateTimeOffset.FromUnixTimeMilliseconds((long)(state.timestamp * 1000)).UtcDateTime;
-        solarPanelVoltageChart.DataSource.AddPointToCategoryRealtime("Solar Panel Voltage", time, state.solarPanelVoltage, 1f);
+        var time = DateTimeOffset.FromUnixTimeMilliseconds(state.timestamp).UtcDateTime;
+        solarPanelVoltageChart.DataSource.AddPointToCategoryRealtime("Solar Panel Voltage", time, state.solarPanelVoltage, .1f);
+        solarPanelAzimuthChart.DataSource.AddPointToCategoryRealtime("Solar Panel Azimuth", time, state.solarPanelOrientation.azimuth, .1f);
+        solarPanelInclinationChart.DataSource.AddPointToCategoryRealtime("Solar Panel Inclination", time, state.solarPanelOrientation.inclination, .1f);
         _currentState = state;
         UpdateUI();
     }
@@ -70,6 +81,24 @@ public class SolarPanelController : MonoBehaviour
         UpdateUI();
     }
 
+    void Update()
+    {
+        var nextOrientation = new Orientation();
+        nextOrientation.azimuth = Mathf.SmoothDampAngle(_lastOrientation.azimuth, _currentState.solarPanelOrientation.azimuth, ref _angularVelocity.azimuth, smoothTime);
+        nextOrientation.inclination = Mathf.SmoothDampAngle(_lastOrientation.inclination, _currentState.solarPanelOrientation.inclination, ref _angularVelocity.inclination, smoothTime);
+        motor1.Rotate(0f, nextOrientation.azimuth - _lastOrientation.azimuth, 0f);
+        motor2.Rotate(0f, nextOrientation.inclination - _lastOrientation.inclination, 0f);
+        _lastOrientation = nextOrientation;
+        _lastOrientation.azimuth = Mod(_lastOrientation.azimuth, 360f);
+        _lastOrientation.inclination = Mod(_lastOrientation.inclination, 360f);
+
+        if (controlConfig.controlMode == ControlConfigMode.AUTOMATIC)
+        {
+            azimuthSlider.SetValue(_lastOrientation.azimuth, false);
+            inclinationSlider.SetValue(_lastOrientation.inclination, false);
+        }
+    }
+
     void UpdateUI()
     {
         var isManual = controlConfig.controlMode == ControlConfigMode.MANUAL;
@@ -92,8 +121,6 @@ public class SolarPanelController : MonoBehaviour
         {
             azimuthInputField.SetTextWithoutNotify(_currentState.solarPanelOrientation.azimuth.ToString());
             inclinationInputField.SetTextWithoutNotify(_currentState.solarPanelOrientation.inclination.ToString());
-            azimuthSlider.SetValue(_currentState.solarPanelOrientation.azimuth, false);
-            inclinationSlider.SetValue(_currentState.solarPanelOrientation.inclination, false);
         }
     }
 

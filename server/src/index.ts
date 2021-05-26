@@ -70,7 +70,7 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
     ws.on('close', (code, reason) => console.log(`A client from ${address} disconnected with code ${code}, reason: ${reason}.`));
 
     ws.on('message', data => {
-        console.log(`Received:\n${data}`);
+        // console.log(`Received:\n${data}`);
 
         let request: {
             event: AppEvent,
@@ -118,11 +118,26 @@ wss.on(AppEvent.UpdateState, (ws: WebSocket, new_state: SystemState) => {
 
 wss.on('FAKE_DATA', (ws: WebSocket) => {
     let fakeDataInterval = setInterval(() => {
+        let timestamp = Date.now();
+        let solarPanelVoltage = 5 * Math.cos(timestamp / 1000 * 3 % 360 * 2 * Math.PI / 360) + 5;
+        let solarPanelOrientation: Orientation = {
+            azimuth: 0,
+            inclination: 0,
+        };
+
+        if (config.controlMode == ControlMode.Manual) {
+            solarPanelOrientation = config.manualOrientation ?? solarPanelOrientation;
+        } else {
+            solarPanelOrientation.azimuth = timestamp / 1000 * 30 % 360;
+            solarPanelOrientation.inclination = 90 * (0.5 * Math.sin(solarPanelOrientation.azimuth * 2 * Math.PI / 360) + 0.5);
+        }
+
         ws.emit(AppEvent.UpdateState, {
-            timestamp: Date.now() / 1000,
-            solarPanelVoltage: randomInt(10)
+            timestamp,
+            solarPanelVoltage,
+            solarPanelOrientation,
         } as SystemState);
-    }, 1000);
+    }, 100);
 
     ws.on('close', () => clearInterval(fakeDataInterval));
 });

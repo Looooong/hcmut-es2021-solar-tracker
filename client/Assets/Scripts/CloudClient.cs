@@ -44,8 +44,6 @@ public class CloudClient : MonoBehaviour
 
         _ws.OnMessage += (_, message) =>
         {
-            Debug.Log($"Received message from WebSocket server:\n{message}");
-
             var eventWrapper = JsonUtility.FromJson<EventWrapper>(message);
             var root = JToken.Parse(message);
             var @event = root["event"];
