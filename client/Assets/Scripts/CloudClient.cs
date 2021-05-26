@@ -49,7 +49,6 @@ public class CloudClient : MonoBehaviour
 
         _ws.OnMessage += (_, message) =>
         {
-            var eventWrapper = JsonUtility.FromJson<EventWrapper>(message);
             var root = JToken.Parse(message);
             var @event = root["event"];
 
@@ -68,7 +67,7 @@ public class CloudClient : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"Cannot parse event \"{eventWrapper.@event}\", ignored,");
+                Debug.LogWarning("Cannot parse WebSocket message, ignored,");
             }
         };
 

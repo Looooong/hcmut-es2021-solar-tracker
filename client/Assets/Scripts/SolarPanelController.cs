@@ -21,8 +21,11 @@ public class SolarPanelController : MonoBehaviour
     public CircularSlider inclinationSlider;
 
     [Header("Charts")]
+    public TMP_Text solarPanelVoltageValueText;
     public GraphChart solarPanelVoltageChart;
+    public TMP_Text solarPanelAzimuthValueText;
     public GraphChart solarPanelAzimuthChart;
+    public TMP_Text solarPanelInclinationValueText;
     public GraphChart solarPanelInclinationChart;
 
     Orientation _lastOrientation;
@@ -109,6 +112,10 @@ public class SolarPanelController : MonoBehaviour
         inclinationSlider.interactable = isManual;
 
         modeDropdown.SetValueWithoutNotify((int)controlConfig.controlMode);
+
+        solarPanelVoltageValueText.text = _currentState.solarPanelVoltage.ToString("0.000V");
+        solarPanelAzimuthValueText.text = _currentState.solarPanelOrientation.azimuth.ToString("0.0°");
+        solarPanelInclinationValueText.text = _currentState.solarPanelOrientation.inclination.ToString("0.0°");
 
         if (isManual)
         {
