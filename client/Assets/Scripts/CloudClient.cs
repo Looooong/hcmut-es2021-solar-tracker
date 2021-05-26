@@ -6,6 +6,11 @@ using UnityEngine;
 
 public class CloudClient : MonoBehaviour
 {
+#if UNITY_EDITOR
+    const string WebSocketURL = "ws://localhost:8080/ws";
+#else
+    const string WebSocketURL = "ws://hcmut-es2021-solar-tracker.herokuapp.com/ws";
+#endif
     public SolarPanelController solarPanelController;
 
     WebSocket _ws;
@@ -29,7 +34,7 @@ public class CloudClient : MonoBehaviour
 
     void Awake()
     {
-        _ws = new WebSocket(new System.Uri("ws://localhost:8080/ws"));
+        _ws = new WebSocket(new System.Uri(WebSocketURL));
 
         _ws.OnOpen += _ =>
         {

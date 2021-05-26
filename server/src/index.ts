@@ -1,15 +1,17 @@
-import { randomInt } from 'crypto';
 import express from 'express';
+import expressStaticGzip from 'express-static-gzip';
 import http, { IncomingMessage } from 'http';
 import { Socket } from 'net';
 import url from 'url';
 import WebSocket from 'ws';
 
 const app = express();
+app.use(expressStaticGzip('public', {
+    enableBrotli: true,
+    orderPreference: ['br', 'gzip'],
+}));
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ noServer: true });
-
-app.use(express.static('public'));
 
 enum AppEvent {
     UpdateConfig = "UPDATE_CONFIG",

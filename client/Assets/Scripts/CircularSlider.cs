@@ -41,12 +41,14 @@ public class CircularSlider : Selectable, IInitializePotentialDragHandler, IDrag
         HandleDrag(eventData);
     }
 
+#if UNITY_EDITOR
     protected override void OnValidate()
     {
         base.OnValidate();
 
         SetValue(value, false);
     }
+#endif
 
     public void SetValue(float newValue, bool notify)
     {
