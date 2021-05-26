@@ -7,7 +7,6 @@ using UnityEngine;
 public class CloudClient : MonoBehaviour
 {
     public SolarPanelController solarPanelController;
-    public SolarPanelStatistics solarPanelStatistics;
 
     WebSocket _ws;
 
@@ -56,11 +55,11 @@ public class CloudClient : MonoBehaviour
                 switch (@event.ToObject<Event>())
                 {
                     case Event.UPDATE_CONFIG:
-                        solarPanelController.UpdateConfig(root["payload"].ToObject<ControlConfig>());
+                        solarPanelController.UpdateControlConfig(root["payload"].ToObject<ControlConfig>());
                         break;
 
                     case Event.UPDATE_STATE:
-                        solarPanelStatistics.AddSystemState(root["payload"].ToObject<SystemState>());
+                        solarPanelController.AddSystemState(root["payload"].ToObject<SystemState>());
                         break;
                 }
             }
