@@ -44,6 +44,6 @@ void init_PWM(void);
 void servo_motor_process_xoy(void);
 void servo_motor_process_yoz(void);
 extern int32_t angle_yoz, pulse_yoz;//goc tam pin voi phap tuyen trai dat
-extern int32_t angle_current_yoz = 0;
+extern int32_t angle_current_yoz;
 extern int32_t angle_xoy, pulse_xoy;//goc huong cua tam pin voi huong bac
-extern int32_t angle_current_xoy = 0;
+extern int32_t angle_current_xoy;
