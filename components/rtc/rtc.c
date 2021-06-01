@@ -37,7 +37,7 @@ static void initialize_sntp(void)
     sntp_init();
 }
 
-static bool obtain_time(void)
+static bool obtain_time()
 {
     // tcpip_adapter_init();
     // ESP_ERROR_CHECK( esp_event_loop_create_default() );
@@ -46,11 +46,6 @@ static bool obtain_time(void)
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
      */
-    bool is_connected = false;
-    initialise_wifi(&is_connected);
-    while(!is_connected){
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
     initialize_sntp();
     // wait for time to be set
     int retry = 0;
@@ -63,7 +58,7 @@ static bool obtain_time(void)
     if (retry == retry_count) return false;
     return true;
 }
-void init_rtc(){
+void init_rtc(void * is_connected){
     ESP_LOGI(pcTaskGetTaskName(0), "Connecting to WiFi and getting time over NTP.");
     if(!obtain_time()) {
         ESP_LOGE(pcTaskGetTaskName(0), "Fail to getting time over NTP.");

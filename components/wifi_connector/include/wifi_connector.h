@@ -15,7 +15,7 @@
 #include "esp_netif.h"
 #include "esp_smartconfig.h"
 
-void initialise_wifi();
+void initialise_wifi(void * parm);
 
 
 

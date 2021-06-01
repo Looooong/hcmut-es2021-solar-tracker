@@ -32,7 +32,11 @@ config_t config;
 void app_main(void)
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
-    // initialise_wifi(&is_connected);
+    bool is_connected = false;
+    initialise_wifi(&is_connected);
+    while(!is_connected){
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
     init_rtc();
     // cloud_client_init(cloud_client_data_handler);
 
@@ -51,36 +55,36 @@ void app_main(void)
     }
 }
 
-static void cloud_client_data_handler(const char *data, int length)
-{
-    ESP_LOGI("Cloud Client", "Received:\n%.*s", length, data);
+// static void cloud_client_data_handler(const char *data, int length)
+// {
+//     ESP_LOGI("Cloud Client", "Received:\n%.*s", length, data);
 
-    char *json_data = (char *)malloc(length + 1);
+//     char *json_data = (char *)malloc(length + 1);
 
-    strncpy(json_data, data, length);
-    json_data[length] = '\0';
+//     strncpy(json_data, data, length);
+//     json_data[length] = '\0';
 
-    cJSON *root = cJSON_Parse(json_data);
-    cJSON *event = cJSON_GetObjectItem(root, "event");
+//     cJSON *root = cJSON_Parse(json_data);
+//     cJSON *event = cJSON_GetObjectItem(root, "event");
 
-    if (strcmp(event->valuestring, "UPDATE_CONFIG") == 0)
-    {
-        cJSON *payload = cJSON_GetObjectItem(root, "payload");
+//     if (strcmp(event->valuestring, "UPDATE_CONFIG") == 0)
+//     {
+//         cJSON *payload = cJSON_GetObjectItem(root, "payload");
 
-        cJSON *control_mode = cJSON_GetObjectItem(payload, "controlMode");
-        config.control_mode = control_mode->valueint > 0 ? MANUAL : AUTOMATIC;
+//         cJSON *control_mode = cJSON_GetObjectItem(payload, "controlMode");
+//         config.control_mode = control_mode->valueint > 0 ? MANUAL : AUTOMATIC;
 
-        cJSON *manual_orientation = cJSON_GetObjectItem(payload, "manualOrientation");
-        config.manual_orientation.azimuth = cJSON_GetObjectItem(manual_orientation, "azimuth")->valuedouble;
-        config.manual_orientation.inclination = cJSON_GetObjectItem(manual_orientation, "inclination")->valuedouble;
-    }
+//         cJSON *manual_orientation = cJSON_GetObjectItem(payload, "manualOrientation");
+//         config.manual_orientation.azimuth = cJSON_GetObjectItem(manual_orientation, "azimuth")->valuedouble;
+//         config.manual_orientation.inclination = cJSON_GetObjectItem(manual_orientation, "inclination")->valuedouble;
+//     }
 
-    cJSON_Delete(root);
-    free(json_data);
-}
+//     cJSON_Delete(root);
+//     free(json_data);
+// }
 
-void get_adc_value( ){
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
-    int val = adc1_get_raw(ADC1_CHANNEL_0);
-}
+// void get_adc_value( ){
+//     adc1_config_width(ADC_WIDTH_BIT_12);
+//     adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
+//     int val = adc1_get_raw(ADC1_CHANNEL_0);
+// }
