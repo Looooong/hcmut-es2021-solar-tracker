@@ -7,7 +7,9 @@
 #include <math.h>
 #include "cloud_client.h"
 #include "motors_controller.h"
+#include "rtc.h"
 #include "sun_calculator.h"
+#include "wifi_connector.h"
 
 typedef enum control_mode_t
 {
@@ -33,6 +35,7 @@ static float delta_rotation(const float current, const float target, const float
 
 void app_main(void)
 {
+    rtc_init();
     cloud_client_init(cloud_client_data_handler);
     motors_init(4, 13);
 
@@ -64,9 +67,6 @@ static void cloud_client_data_handler(const char *data, int length)
         config.manual_orientation.azimuth = cJSON_GetObjectItem(manual_orientation, "azimuth")->valuedouble;
         config.manual_orientation.inclination = cJSON_GetObjectItem(manual_orientation, "inclination")->valuedouble;
     }
-
-    cJSON_Delete(root);
-    free(json_data);
 }
 
 static void motors_timer_callback(TimerHandle_t _timer)
@@ -75,6 +75,8 @@ static void motors_timer_callback(TimerHandle_t _timer)
 
     if (config.control_mode == AUTOMATIC)
     {
+        time_t time;
+        get_time_rtc(*time);
         // TODO: change parameters
         motors_orientation = get_sun_orientation(0, 0, 0);
     }
