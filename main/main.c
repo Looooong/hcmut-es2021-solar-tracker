@@ -1,13 +1,14 @@
 #include <cJSON.h>
 #include <esp_log.h>
+#include <esp_sntp.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/timers.h>
 #include <math.h>
+#include <sys/time.h>
 #include "cloud_client.h"
 #include "motors_controller.h"
-#include "rtc.h"
 #include "sun_calculator.h"
 #include "wifi_connector.h"
 
@@ -24,10 +25,14 @@ typedef struct config_t
 } config_t;
 
 const float angular_speed = 30.f;
+const float latitude = 10.75f;
+const float longitude = 106.75f;
 
 config_t config;
 orientation_t current_orientation;
 
+static void initialize_sntp();
+static void notify_sntp_sync(struct timeval *tv);
 static void cloud_client_data_handler(const char *data, int length);
 static void motors_timer_callback(TimerHandle_t _timer);
 static orientation_t compensate_platform_orientation(orientation_t orientation);
@@ -35,13 +40,33 @@ static float delta_rotation(const float current, const float target, const float
 
 void app_main(void)
 {
-    rtc_init();
+    bool is_connected = false;
+    initialise_wifi(&is_connected);
+
+    while (!is_connected)
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+    initialize_sntp();
     cloud_client_init(cloud_client_data_handler);
     motors_init(4, 13);
 
     xTimerCreate("Motors", pdMS_TO_TICKS(50), pdTRUE, NULL, motors_timer_callback);
 
     vTaskStartScheduler();
+}
+
+static void initialize_sntp()
+{
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_set_sync_interval(15000);
+    sntp_set_time_sync_notification_cb(notify_sntp_sync);
+    sntp_init();
+}
+
+static void notify_sntp_sync(struct timeval *tv)
+{
+    ESP_LOGI("SNTP", "Received time from server: %ld", tv->tv_sec);
 }
 
 static void cloud_client_data_handler(const char *data, int length)
@@ -75,16 +100,18 @@ static void motors_timer_callback(TimerHandle_t _timer)
 
     if (config.control_mode == AUTOMATIC)
     {
-        time_t time;
-        get_time_rtc(*time);
-        // TODO: change parameters
-        motors_orientation = get_sun_orientation(0, 0, 0);
+        time_t t;
+        time(&t);
+        motors_orientation = get_sun_orientation(t, latitude, longitude);
     }
 
     motors_orientation = compensate_platform_orientation(motors_orientation);
 
     current_orientation.azimuth += delta_rotation(current_orientation.azimuth, motors_orientation.azimuth, .05f);
     current_orientation.inclination += delta_rotation(current_orientation.inclination, motors_orientation.inclination, .05f);
+
+    if (current_orientation.inclination > 90.f)
+        return;
 
     motors_rotate(current_orientation);
 }
