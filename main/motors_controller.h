@@ -1,8 +1,9 @@
-#ifndef __MOTORS_CONTROLLER__
-#define __MOTORS_CONTROLLER__
+#ifndef MOTORS_CONTROLLER_H
+#define MOTORS_CONTROLLER_H
 
 #include "orientation.h"
 
-void rotate_motors(orientation_t orientation);
+void motors_init(int azimuth_gpio, int inclination_gpio);
+void motors_rotate(orientation_t orientation);
 
-#endif
+#endif // MOTORS_CONTROLLER_H

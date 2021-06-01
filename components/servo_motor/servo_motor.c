@@ -1,3 +1,5 @@
+#include "servo_motor.h"
+
 static void mcpwm_example_gpio_initialize(void)
 {
     printf("initializing mcpwm servo control gpio......\n");

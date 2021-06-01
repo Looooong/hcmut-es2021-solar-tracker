@@ -1,12 +1,12 @@
 #include <cJSON.h>
-#include <ds1307.h>
 #include <esp_log.h>
 #include <esp_system.h>
-#include <esp_websocket_client.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <stdio.h>
+#include <freertos/timers.h>
+#include <math.h>
 #include "cloud_client.h"
+#include "motors_controller.h"
 #include "sun_calculator.h"
 
 typedef enum control_mode_t
@@ -19,30 +19,26 @@ typedef struct config_t
 {
     control_mode_t control_mode;
     orientation_t manual_orientation;
-}
-config_t;
+} config_t;
+
+const float angular_speed = 30.f;
 
 config_t config;
+orientation_t current_orientation;
 
-i2c_dev_t init_ds1307();
-time_t get_time_ds1307(i2c_dev_t *dev);
 static void cloud_client_data_handler(const char *data, int length);
+static void motors_timer_callback(TimerHandle_t _timer);
+static orientation_t compensate_platform_orientation(orientation_t orientation);
+static float delta_rotation(const float current, const float target, const float delta_time);
 
 void app_main(void)
 {
-    i2c_dev_t dev = init_ds1307();
     cloud_client_init(cloud_client_data_handler);
+    motors_init(4, 13);
 
-    while (1)
-    {
-        time_t time = get_time_ds1307(&dev);
-        orientation_t orient = get_sun_orientation(time, 10.816572, 106.674488);
-        printf("Time by Seconds : %ld\n", time);
-        printf("azimuth = %f \ninclination = %f\n", orient.azimuth, orient.inclination);
-        fflush(stdout);
-        cloud_client_send("Hello from client", 18, 10000);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-    }
+    xTimerCreate("Motors", pdMS_TO_TICKS(50), pdTRUE, NULL, motors_timer_callback);
+
+    vTaskStartScheduler();
 }
 
 static void cloud_client_data_handler(const char *data, int length)
@@ -62,7 +58,7 @@ static void cloud_client_data_handler(const char *data, int length)
         cJSON *payload = cJSON_GetObjectItem(root, "payload");
 
         cJSON *control_mode = cJSON_GetObjectItem(payload, "controlMode");
-        config.control_mode = control_mode->valueint > 0 ? MANUAL : AUTOMATIC;
+        config.control_mode = strcmp(control_mode->valuestring, "MANUAL") ? MANUAL : AUTOMATIC;
 
         cJSON *manual_orientation = cJSON_GetObjectItem(payload, "manualOrientation");
         config.manual_orientation.azimuth = cJSON_GetObjectItem(manual_orientation, "azimuth")->valuedouble;
@@ -73,34 +69,33 @@ static void cloud_client_data_handler(const char *data, int length)
     free(json_data);
 }
 
-i2c_dev_t init_ds1307()
+static void motors_timer_callback(TimerHandle_t _timer)
 {
-    i2c_dev_t dev;
-    while (ds1307_init_desc(&dev, I2C_NUM_0, CONFIG_SDA_GPIO, CONFIG_SCL_GPIO) != ESP_OK)
+    orientation_t motors_orientation = config.manual_orientation;
+
+    if (config.control_mode == AUTOMATIC)
     {
-        ESP_LOGE(pcTaskGetTaskName(0), "Could not init device descriptor.");
-        vTaskDelay(pdMS_TO_TICKS(500));
+        // TODO: change parameters
+        motors_orientation = get_sun_orientation(0, 0, 0);
     }
-    return dev;
+
+    motors_orientation = compensate_platform_orientation(motors_orientation);
+
+    current_orientation.azimuth += delta_rotation(current_orientation.azimuth, motors_orientation.azimuth, .05f);
+    current_orientation.inclination += delta_rotation(current_orientation.inclination, motors_orientation.inclination, .05f);
+
+    motors_rotate(current_orientation);
 }
 
-time_t get_time_ds1307(i2c_dev_t *dev)
+static orientation_t compensate_platform_orientation(orientation_t orientation)
 {
-    struct tm time;
+    // TODO: Implement
+    return orientation;
+}
 
-    while (ds1307_get_time(dev, &time) != ESP_OK)
-    {
-        ESP_LOGE(pcTaskGetTaskName(0), "Could not get time.");
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
-    time.tm_year = time.tm_year - 1900;
-    time.tm_hour = time.tm_hour - TIME_ZONE_DS1307;
-    // printf( "time.tm_sec=%d",time.tm_sec);
-    // printf( "time.tm_min=%d",time.tm_min);
-    // printf( "time.tm_hour=%d",time.tm_hour);
-    // printf( "time.tm_wday=%d",time.tm_wday);
-    // printf( "time.tm_mday=%d",time.tm_mday);
-    // printf( "time.tm_mon=%d",time.tm_mon);
-    // printf( "time.tm_year=%d",time.tm_year);
-    return mktime(&time);
+static float delta_rotation(const float current, const float target, const float delta_time)
+{
+    float delta = target - current;
+    float absolute_rotation = fmin(fabs(delta), angular_speed * delta_time);
+    return copysign(delta, absolute_rotation);
 }
