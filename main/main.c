@@ -56,26 +56,11 @@ void app_main(void)
     initialize_sntp();
 
     cloud_client_init(cloud_client_data_handler);
-    motors_init(17, 16);
+    motors_init(
+        GPIO_NUM_13, GPIO_NUM_4,
+        GPIO_NUM_17, GPIO_NUM_16);
 
     // xTimerCreate("Motors", pdMS_TO_TICKS(50), pdTRUE, NULL, motors_timer_callback);
-
-    gpio_config_t io_conf;
-    //disable interrupt
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    //set as output mode
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    //bit mask of the pins that you want to set,e.g.GPIO18/19
-    io_conf.pin_bit_mask = ((1ULL << 4) | (1ULL << 13));
-    //disable pull-down mode
-    io_conf.pull_down_en = 1;
-    //disable pull-up mode
-    io_conf.pull_up_en = 0;
-    //configure GPIO with the given settings
-    gpio_config(&io_conf);
-
-    gpio_set_level(4, 1);
-    gpio_set_level(13, 1);
 
     ESP_LOGI("Solar tracker", "Initialized.");
 }
@@ -132,7 +117,8 @@ static void motors_timer_callback(TimerHandle_t _timer)
     current_orientation.azimuth += delta_rotation(current_orientation.azimuth, motors_orientation.azimuth, .05f);
     current_orientation.inclination += delta_rotation(current_orientation.inclination, motors_orientation.inclination, .05f);
 
-    if (current_orientation.inclination > 90.f){
+    if (current_orientation.inclination > 90.f)
+    {
         ESP_LOGI("Motors", "Inclination over 90.");
         return;
     }

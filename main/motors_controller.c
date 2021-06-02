@@ -2,18 +2,27 @@
 #include <esp_log.h>
 #include "motors_controller.h"
 
-const float azimuth_0_degrees_duty_cycle = .05f;
-const float azimuth_360_degrees_duty_cycle = .1f;
-const float inclination_0_degrees_duty_cycle = .05f;
-const float inclination_180_degrees_duty_cycle = .1f;
+static const float azimuth_0_degrees_duty_cycle = .05f;
+static const float azimuth_360_degrees_duty_cycle = .1f;
+static const float inclination_0_degrees_duty_cycle = .05f;
+static const float inclination_180_degrees_duty_cycle = .1f;
 
-orientation_t current_orientation;
+static orientation_t current_orientation;
 
 static unsigned int target_duty_azimuth(float azimuth);
 static unsigned int target_duty_inclination(float inclination);
 
-void motors_init(int azimuth_gpio, int inclination_gpio)
+void motors_init(
+    gpio_num_t azimuth_enable_gpio, gpio_num_t inclination_enable_gpio,
+    gpio_num_t azimuth_pwm_gpio, gpio_num_t inclination_pwm_gpio)
 {
+    gpio_config_t enable_gpio_config = {
+        .pin_bit_mask = BIT(azimuth_enable_gpio) | BIT(inclination_enable_gpio),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
     ledc_timer_config_t timer_config = {
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .duty_resolution = LEDC_TIMER_10_BIT,
@@ -21,7 +30,7 @@ void motors_init(int azimuth_gpio, int inclination_gpio)
         .freq_hz = 50,
     };
     ledc_channel_config_t azimuth_channel_config = {
-        .gpio_num = azimuth_gpio,
+        .gpio_num = azimuth_pwm_gpio,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .channel = LEDC_CHANNEL_0,
         .intr_type = LEDC_INTR_DISABLE,
@@ -29,7 +38,7 @@ void motors_init(int azimuth_gpio, int inclination_gpio)
         .hpoint = 0,
     };
     ledc_channel_config_t inclination_channel_config = {
-        .gpio_num = inclination_gpio,
+        .gpio_num = inclination_pwm_gpio,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .channel = LEDC_CHANNEL_1,
         .intr_type = LEDC_INTR_DISABLE,
@@ -37,6 +46,7 @@ void motors_init(int azimuth_gpio, int inclination_gpio)
         .hpoint = 0,
     };
 
+    ESP_ERROR_CHECK(gpio_config(&enable_gpio_config));
     ESP_ERROR_CHECK(ledc_timer_config(&timer_config));
     ESP_ERROR_CHECK(ledc_channel_config(&azimuth_channel_config));
     ESP_ERROR_CHECK(ledc_channel_config(&inclination_channel_config));
