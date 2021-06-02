@@ -60,7 +60,9 @@ void app_main(void)
         GPIO_NUM_13, GPIO_NUM_4,
         GPIO_NUM_17, GPIO_NUM_16);
 
-    // xTimerCreate("Motors", pdMS_TO_TICKS(50), pdTRUE, NULL, motors_timer_callback);
+    TimerHandle_t motors_timer = xTimerCreate("Motors", pdMS_TO_TICKS(100), pdTRUE, NULL, motors_timer_callback);
+    xTimerStart(motors_timer, pdMS_TO_TICKS(1000));
+    ESP_LOGI("Motors", "Will start in 1 second.");
 
     ESP_LOGI("Solar tracker", "Initialized.");
 }
@@ -94,8 +96,6 @@ static void cloud_client_data_handler(const char *data, int length)
         cJSON *manual_orientation = cJSON_GetObjectItem(payload, "manualOrientation");
         control_config->manual_orientation.azimuth = cJSON_GetObjectItem(manual_orientation, "azimuth")->valuedouble;
         control_config->manual_orientation.inclination = cJSON_GetObjectItem(manual_orientation, "inclination")->valuedouble;
-
-        motors_rotate(control_config->manual_orientation);
     }
 
     cJSON_Delete(root);
@@ -114,14 +114,8 @@ static void motors_timer_callback(TimerHandle_t _timer)
 
     motors_orientation = compensate_platform_orientation(motors_orientation);
 
-    current_orientation.azimuth += delta_rotation(current_orientation.azimuth, motors_orientation.azimuth, .05f);
-    current_orientation.inclination += delta_rotation(current_orientation.inclination, motors_orientation.inclination, .05f);
-
-    if (current_orientation.inclination > 90.f)
-    {
-        ESP_LOGI("Motors", "Inclination over 90.");
-        return;
-    }
+    current_orientation.azimuth += delta_rotation(current_orientation.azimuth, motors_orientation.azimuth, .1f);
+    current_orientation.inclination += delta_rotation(current_orientation.inclination, motors_orientation.inclination, .1f);
 
     motors_rotate(current_orientation);
 }
@@ -136,5 +130,5 @@ static float delta_rotation(const float current, const float target, const float
 {
     float delta = target - current;
     float absolute_rotation = fmin(fabs(delta), angular_speed * delta_time);
-    return copysign(delta, absolute_rotation);
+    return copysign(absolute_rotation, delta);
 }

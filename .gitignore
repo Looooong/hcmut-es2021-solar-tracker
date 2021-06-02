@@ -1,6 +1,5 @@
 .vscode/
 /build/
-/sdkconfig
 
 # NodeJS web server
 # dependencies
