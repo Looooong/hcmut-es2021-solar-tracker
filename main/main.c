@@ -43,6 +43,9 @@ static float delta_rotation(const float current, const float target, const float
 
 void app_main(void)
 {
+    setenv("TZ", "GMT+7", 1);
+    tzset();
+
     control_config = (control_config_t *)malloc(sizeof(control_config_t));
 
     ESP_ERROR_CHECK(nvs_flash_init());

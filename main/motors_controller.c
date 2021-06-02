@@ -1,5 +1,6 @@
 #include <driver/ledc.h>
 #include <esp_log.h>
+#include <math.h>
 #include "motors_controller.h"
 
 static const float azimuth_0_degrees_duty_cycle = .05f;
@@ -55,7 +56,9 @@ void motors_init(
 
 void motors_rotate(orientation_t orientation)
 {
-    if (orientation.azimuth != current_orientation.azimuth)
+    bool is_dirty = false;
+
+    if (fabs(orientation.azimuth - current_orientation.azimuth) > .001f)
     {
         ledc_set_duty(
             LEDC_HIGH_SPEED_MODE,
@@ -65,11 +68,10 @@ void motors_rotate(orientation_t orientation)
             LEDC_HIGH_SPEED_MODE,
             LEDC_CHANNEL_0);
 
-        current_orientation.azimuth = orientation.azimuth;
-        ESP_LOGI("Motors", "New azimuth: %f", current_orientation.azimuth);
+        is_dirty = true;
     }
 
-    if (orientation.inclination != current_orientation.inclination)
+    if (fabs(orientation.inclination - current_orientation.inclination) > .001f)
     {
         ledc_set_duty(
             LEDC_HIGH_SPEED_MODE,
@@ -79,8 +81,13 @@ void motors_rotate(orientation_t orientation)
             LEDC_HIGH_SPEED_MODE,
             LEDC_CHANNEL_1);
 
-        current_orientation.inclination = orientation.inclination;
-        ESP_LOGI("Motors", "New inclination: %f", current_orientation.inclination);
+        is_dirty = true;
+    }
+
+    if (is_dirty)
+    {
+        current_orientation = orientation;
+        ESP_LOGI("Motors", "New orientation: (%6.3f, %6.3f)", orientation.azimuth, orientation.inclination);
     }
 }
 

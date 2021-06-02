@@ -1,12 +1,12 @@
-#ifndef SUN_CALC_H
-#define SUN_CALC_H
+#ifndef __SUN_CALC_H__
+#define __SUN_CALC_H__
 
 typedef struct
 {
-    float azimuth;
-    float altitude;
+    double azimuth;
+    double altitude;
 } sun_coords_t;
 
-sun_coords_t sunCalcGetPosition(time_t date, float lat, float lng);
+sun_coords_t sunCalcGetPosition(time_t date, double lat, double lng);
 
-#endif // SUN_CALC_H
+#endif // __SUN_CALC_H__
