@@ -2,7 +2,7 @@
 #define __MOTORS_CONTROLLER_H__
 
 #include <driver/gpio.h>
-#include "orientation.h"
+#include "types.h"
 
 void motors_init(
     gpio_num_t azimuth_enable_gpio, gpio_num_t inclination_enable_gpio,

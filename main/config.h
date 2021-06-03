@@ -1,7 +1,7 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
 
-#include "orientation.h"
+#include "types.h"
 
 typedef enum {
     AUTOMATIC,
@@ -13,4 +13,4 @@ typedef struct {
     orientation_t manual_orientation;
 } config_t;
 
-#endif // CONFIG_H
+#endif // __CONFIG_H__

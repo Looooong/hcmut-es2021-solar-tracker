@@ -3,7 +3,7 @@
 #include "sun_calculator.h"
 
 #define PI 3.14159265358979323846
-#define rad (PI / 180)
+#define rad (PI / 180.f)
 
 orientation_t get_sun_orientation(time_t time, float latitude, float longitude)
 {
