@@ -39,7 +39,6 @@ public class CloudClient : MonoBehaviour
         _ws.OnOpen += _ =>
         {
             Debug.Log("Connected to WebSocket server.");
-            _ws.Send("{\"event\":\"FAKE_DATA\"}"); // TODO: Remove this
         };
 
         _ws.OnClosed += (_, code, message) =>

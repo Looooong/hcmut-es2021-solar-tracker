@@ -122,23 +122,23 @@ void quaternion_mahony_update(quaternion_t *q, vector3_t *error, vector3_t accel
     ex = (ay * vz - az * vy) + (my * wz - mz * wy);
     ey = (az * vx - ax * vz) + (mz * wx - mx * wz);
     ez = (ax * vy - ay * vx) + (mx * wy - my * wx);
-    if (Ki > 0.0f)
-    {
-        error->x += ex; // accumulate integral error
-        error->y += ey;
-        error->z += ez;
-    }
-    else
-    {
-        error->x = 0.0f; // prevent integral wind up
-        error->y = 0.0f;
-        error->z = 0.0f;
-    }
 
     // Apply feedback terms
-    gx = gx + Kp * ex + Ki * error->x;
-    gy = gy + Kp * ey + Ki * error->y;
-    gz = gz + Kp * ez + Ki * error->z;
+    gx = gx + Kp * ex;
+    gy = gy + Kp * ey;
+    gz = gz + Kp * ez;
+    if (error != NULL)
+    {
+        // Accumulate integral error
+        error->x += ex;
+        error->y += ey;
+        error->z += ez;
+
+        // Integral feedback
+        gx += Ki * error->x;
+        gy += Ki * error->y;
+        gz += Ki * error->z;
+    }
 
     // Integrate rate of change of quaternion
     pa = q2;

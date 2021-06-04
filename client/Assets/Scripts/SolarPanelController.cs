@@ -5,6 +5,14 @@ using UnityEngine;
 
 public class SolarPanelController : MonoBehaviour
 {
+    static readonly Matrix4x4 SystemToWorld = new Matrix4x4(
+        new Vector4(0f, 0f, 1f, 0f),
+        new Vector4(-1f, 0f, 0f, 0f),
+        new Vector4(0f, 1f, 0f, 0f),
+        new Vector4(0f, 0f, 0f, 1f)
+    );
+    static readonly Matrix4x4 WorldToSystem = SystemToWorld.inverse;
+
     public ControlConfig controlConfig;
     public CloudClient cloudClient;
 
@@ -86,9 +94,11 @@ public class SolarPanelController : MonoBehaviour
 
     void Update()
     {
-        var nextOrientation = new Orientation();
-        nextOrientation.azimuth = Mathf.SmoothDampAngle(_lastOrientation.azimuth, _currentState.solarPanelOrientation.azimuth, ref _angularVelocity.azimuth, smoothTime);
-        nextOrientation.inclination = Mathf.SmoothDampAngle(_lastOrientation.inclination, _currentState.solarPanelOrientation.inclination, ref _angularVelocity.inclination, smoothTime);
+        var nextOrientation = new Orientation
+        {
+            azimuth = Mathf.SmoothDampAngle(_lastOrientation.azimuth, _currentState.motorsRotation.azimuth, ref _angularVelocity.azimuth, smoothTime),
+            inclination = Mathf.SmoothDampAngle(_lastOrientation.inclination, _currentState.motorsRotation.inclination, ref _angularVelocity.inclination, smoothTime),
+        };
         motor1.Rotate(0f, nextOrientation.azimuth - _lastOrientation.azimuth, 0f);
         motor2.Rotate(0f, nextOrientation.inclination - _lastOrientation.inclination, 0f);
         _lastOrientation = nextOrientation;

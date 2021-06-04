@@ -30,16 +30,24 @@ interface ControlConfig {
 
 interface SystemState {
     timestamp: number,
-    motorOrientation: Orientation,
-    platformOrientation: Orientation,
-    solarPanelOrientation: Orientation,
+    solarPanelCurrent: number,
     solarPanelVoltage: number,
-    sunOrientation: Orientation,
+    batteryVoltage: number,
+    solarPanelOrientation: Orientation,
+    motorsRotation: Orientation,
+    platformRotation: Quaternion,
 }
 
 interface Orientation {
     azimuth: number,
     inclination: number,
+}
+
+interface Quaternion {
+    w: number,
+    x: number,
+    y: number,
+    z: number,
 }
 
 let config = {
@@ -72,14 +80,16 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
     ws.on('close', (code, reason) => console.log(`A client from ${address} disconnected with code ${code}, reason: ${reason}.`));
 
     ws.on('message', data => {
-        // console.log(`Received:\n${data}`);
+        try {
+            let request: {
+                event: AppEvent,
+                payload?: {} | []
+            } = JSON.parse(data as string);
 
-        let request: {
-            event: AppEvent,
-            payload?: {} | []
-        } = JSON.parse(data as string);
-
-        wss.emit(request.event, ws, request.payload);
+            wss.emit(request.event, ws, request.payload);
+        } catch {
+            console.log(`Received non-JSON data:\n\t${data}`);
+        }
     });
 
     ws.on(AppEvent.UpdateConfig, () => {
@@ -119,6 +129,7 @@ wss.on(AppEvent.UpdateState, (ws: WebSocket, new_state: SystemState) => {
 });
 
 wss.on('FAKE_DATA', (ws: WebSocket) => {
+    return;
     let fakeDataInterval = setInterval(() => {
         let timestamp = Date.now();
         let solarPanelVoltage = 5 * Math.cos(timestamp / 1000 * 3 % 360 * 2 * Math.PI / 360) + 5;

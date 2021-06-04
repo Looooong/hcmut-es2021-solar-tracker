@@ -4,6 +4,7 @@
 
 const esp_websocket_client_config_t config = {
     .uri = "wss://hcmut-es2021-solar-tracker.herokuapp.com/ws",
+    // .uri = "ws://192.168.1.4:8080/ws", // Localhost testing
 };
 esp_websocket_client_handle_t client;
 cloud_client_data_handler_t external_data_handler;
@@ -46,8 +47,16 @@ void cloud_client_init(cloud_client_data_handler_t data_handler)
 
 void cloud_client_send(const char *data, int length, TickType_t timeout)
 {
-    if (esp_websocket_client_send_text(client, data, length, timeout) != ESP_OK)
+    // ESP_LOGI("Cloud Client", "Sending:\n\t%.*s", length, data);
+
+    length = esp_websocket_client_send_text(client, data, length, timeout);
+
+    if (length > -1)
     {
-        ESP_LOGE("Cloud Client", "Cannot send text data!");
+        // ESP_LOGI("Cloud Client", "%d text characters have been sent.", length);
+    }
+    else
+    {
+        ESP_LOGE("Cloud Client", "Error sending text data!");
     }
 }
