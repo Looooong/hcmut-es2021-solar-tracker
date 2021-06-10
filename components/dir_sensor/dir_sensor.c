@@ -8,8 +8,8 @@
 #include "esp_task_wdt.h"
 #include "common.h"
 
-#define SAMPLE_FREQ_Hz 200
-static const char *TAG = "get_vector";
+// #define SAMPLE_FREQ_Hz 200
+//static const char *TAG = "get_vector";
 #define I2C_MASTER_NUM I2C_NUM_0
 
 calibration_t cal = {
@@ -50,7 +50,6 @@ void get_vector3(vector3_t *v_accel,vector3_t *v_gyro,vector3_t *v_mag){
     transfer_to_vector3(v_accel, &va);
     transfer_to_vector3(v_gyro, &vg);
     transfer_to_vector3(v_mag, &vm);
-    esp_task_wdt_reset();
 }
 
 void calibration(){
