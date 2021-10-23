@@ -7,11 +7,11 @@
 #include <freertos/task.h>
 #include <freertos/timers.h>
 #include <math.h>
-#include <mpu9250.h>
 #include <nvs_flash.h>
 #include <sys/time.h>
 #include "cloud_client.h"
 #include "motors_controller.h"
+#include "sensor.h"
 #include "sun_calculator.h"
 #include "types.h"
 #include "wifi_connector.h"
@@ -51,7 +51,6 @@ static system_state_t system_state = {
 };
 static double platform_rotation_updated_at;
 
-static void initialize_mpu9250();
 static void initialize_sntp();
 static void initialize_timezone();
 static void notify_sntp_sync(struct timeval *tv);
@@ -72,12 +71,14 @@ void app_main(void)
     bool is_connected = false;
     initialise_wifi(&is_connected);
 
-    initialize_mpu9250();
-    motors_init(GPIO_NUM_33, GPIO_NUM_32,
-                GPIO_NUM_35, GPIO_NUM_34);
+    motors_init(GPIO_NUM_18, GPIO_NUM_19,
+                GPIO_NUM_25, GPIO_NUM_26);
+    sensor_init();
 
+    ESP_LOGI("Wifi", "Waiting...");
     while (!is_connected)
         vTaskDelay(pdMS_TO_TICKS(100));
+    ESP_LOGI("Wifi", "Started.");
 
     initialize_sntp();
 
@@ -96,20 +97,6 @@ void app_main(void)
     ESP_LOGI("System state", "Will be uploaded in 1.05 second.");
 
     ESP_LOGI("Solar tracker", "Initialized.");
-}
-
-static void initialize_mpu9250()
-{
-    calibration_t calibration = {
-        .mag_offset = {.x = 0.0, .y = 0.0, .z = 0.0},
-        .mag_scale = {.x = 1.0, .y = 1.0, .z = 1.0},
-        .accel_offset = {.x = 0.0, .y = 0.0, .z = 0.0},
-        .accel_scale_lo = {.x = -1.0, .y = -1.0, .z = -1.0},
-        .accel_scale_hi = {.x = 1.0, .y = 1.0, .z = 1.0},
-        .gyro_bias_offset = {.x = 0.0, .y = 0.0, .z = 0.0}};
-
-    choose_SCL_SDA_GPIO(GPIO_NUM_15, GPIO_NUM_2);
-    i2c_mpu9250_init(&calibration);
 }
 
 static void initialize_sntp()
@@ -170,7 +157,8 @@ static void motors_timer_callback(TimerHandle_t timer)
         system_state.solar_panel_orientation = control_config.manual_orientation;
     }
 
-    orientation_t desired_motors_rotation = compensate_platform_rotation(system_state.solar_panel_orientation);
+    // orientation_t desired_motors_rotation = compensate_platform_rotation(system_state.solar_panel_orientation);
+    orientation_t desired_motors_rotation = system_state.solar_panel_orientation;
     float dt = pdTICKS_TO_MS(xTimerGetPeriod(timer)) / 1000.f;
 
     system_state.motors_rotation.azimuth += delta_rotation(system_state.motors_rotation.azimuth, desired_motors_rotation.azimuth, dt);
@@ -181,16 +169,11 @@ static void motors_timer_callback(TimerHandle_t timer)
 
 static void update_platform_rotation(TimerHandle_t timer)
 {
-    vector_t va, vg, vm;
-    ESP_ERROR_CHECK(get_accel_gyro_mag(&va, &vg, &vm));
+    vector3_t accel = {0.f, 0.f, 1.f};
+    vector3_t gyro = {0.f, 0.f, 0.f};
+    vector3_t magnet = {1.f, 0.f, 0.f};
 
-    vector3_t accel = {va.x, va.y, va.z};
-    vector3_t gyro = {vg.x, vg.y, vg.z};
-    vector3_t magnet = {vm.x, vm.y, vm.z};
-
-    // vector3_t accel = {0.f, 0.f, 1.f};
-    // vector3_t gyro = {0.f, 0.f, 0.f};
-    // vector3_t magnet = {1.f, 0.f, 0.f};
+    sensor_read(&accel, &gyro, &magnet);
 
     double current_time = gettimeofday_combined();
     float dt = platform_rotation_updated_at == 0.f ? 0.f : current_time - platform_rotation_updated_at;

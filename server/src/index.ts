@@ -87,8 +87,8 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
             } = JSON.parse(data as string);
 
             wss.emit(request.event, ws, request.payload);
-        } catch {
-            console.log(`Received non-JSON data:\n\t${data}`);
+        } catch (e: any) {
+            console.log(`Error parsing JSON: ${e}\n---------\nJSON string:\n\t${data}`);
         }
     });
 

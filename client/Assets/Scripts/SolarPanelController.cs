@@ -27,6 +27,7 @@ public class SolarPanelController : MonoBehaviour
     public TMP_InputField inclinationInputField;
     public CircularSlider azimuthSlider;
     public CircularSlider inclinationSlider;
+    public Transform platformIndicator;
 
     [Header("Charts")]
     public TMP_Text solarPanelVoltageValueText;
@@ -124,8 +125,8 @@ public class SolarPanelController : MonoBehaviour
         modeDropdown.SetValueWithoutNotify((int)controlConfig.controlMode);
 
         solarPanelVoltageValueText.text = _currentState.solarPanelVoltage.ToString("0.000V");
-        solarPanelAzimuthValueText.text = _currentState.solarPanelOrientation.azimuth.ToString("0.0°");
-        solarPanelInclinationValueText.text = _currentState.solarPanelOrientation.inclination.ToString("0.0°");
+        solarPanelAzimuthValueText.text = _currentState.solarPanelOrientation.azimuth.ToString("0.000°");
+        solarPanelInclinationValueText.text = _currentState.solarPanelOrientation.inclination.ToString("0.000°");
 
         if (isManual)
         {
@@ -139,6 +140,12 @@ public class SolarPanelController : MonoBehaviour
             azimuthInputField.SetTextWithoutNotify(_currentState.solarPanelOrientation.azimuth.ToString());
             inclinationInputField.SetTextWithoutNotify(_currentState.solarPanelOrientation.inclination.ToString());
         }
+
+        platformIndicator.rotation = (
+            SystemToWorld *
+            Matrix4x4.Rotate(_currentState.platformRotation) *
+            WorldToSystem
+        ).rotation;
     }
 
     float Mod(float a, float n)

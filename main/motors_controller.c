@@ -17,6 +17,7 @@ void motors_init(
     gpio_num_t azimuth_enable_gpio, gpio_num_t inclination_enable_gpio,
     gpio_num_t azimuth_pwm_gpio, gpio_num_t inclination_pwm_gpio)
 {
+    ESP_LOGI("Motors", "Initializing...");
     gpio_config_t enable_gpio_config = {
         .pin_bit_mask = BIT(azimuth_enable_gpio) | BIT(inclination_enable_gpio),
         .mode = GPIO_MODE_OUTPUT,
@@ -87,7 +88,7 @@ void motors_rotate(orientation_t orientation)
     if (is_dirty)
     {
         current_orientation = orientation;
-        ESP_LOGI("Motors", "New orientation: (%6.3f, %6.3f)", orientation.azimuth, orientation.inclination);
+        // ESP_LOGI("Motors", "New orientation: (%6.3f, %6.3f)", orientation.azimuth, orientation.inclination);
     }
 }
 

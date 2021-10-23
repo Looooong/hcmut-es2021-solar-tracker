@@ -3,11 +3,23 @@
 #include "cloud_client.h"
 
 const esp_websocket_client_config_t config = {
-    .uri = "wss://hcmut-es2021-solar-tracker.herokuapp.com/ws",
-    // .uri = "ws://192.168.1.4:8080/ws", // Localhost testing
+    // .uri = "wss://hcmut-es2021-solar-tracker.herokuapp.com/ws",
+    .uri = "ws://192.168.1.3:8080/ws", // Localhost testing
 };
 esp_websocket_client_handle_t client;
 cloud_client_data_handler_t external_data_handler;
+bool connected = false;
+
+static void cloud_client_connected_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+    connected = true;
+}
+
+static void cloud_client_disconnected_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+    connected = false;
+}
+
 
 static void cloud_client_data_handler_internal(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
@@ -39,6 +51,9 @@ void cloud_client_init(cloud_client_data_handler_t data_handler)
     client = esp_websocket_client_init(&config);
     esp_websocket_register_events(client, WEBSOCKET_EVENT_DATA, cloud_client_data_handler_internal, NULL);
 
+    esp_websocket_register_events(client, WEBSOCKET_EVENT_CONNECTED, cloud_client_connected_handler, NULL);
+    esp_websocket_register_events(client, WEBSOCKET_EVENT_DISCONNECTED, cloud_client_disconnected_handler, NULL);
+
     if (esp_websocket_client_start(client) != ESP_OK)
     {
         ESP_LOGE("Cloud Client", "Cannot connect start WebSocket client!");
@@ -47,6 +62,8 @@ void cloud_client_init(cloud_client_data_handler_t data_handler)
 
 void cloud_client_send(const char *data, int length, TickType_t timeout)
 {
+    if (!connected) return;
+
     // ESP_LOGI("Cloud Client", "Sending:\n\t%.*s", length, data);
 
     length = esp_websocket_client_send_text(client, data, length, timeout);

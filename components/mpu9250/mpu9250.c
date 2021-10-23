@@ -176,13 +176,23 @@ esp_err_t get_sleep_enabled(bool *state)
 
 float scale_accel(float value, float offset, float scale_lo, float scale_hi)
 {
+//   if (value < 0)
+//   {
+//     return -(value * accel_inv_scale - offset) / (scale_lo - offset);
+//   }
+//   else
+//   {
+//     return (value * accel_inv_scale - offset) / (scale_hi - offset);
+//   }
+  value = value * accel_inv_scale + offset;
+
   if (value < 0)
   {
-    return -(value * accel_inv_scale - offset) / (scale_lo - offset);
+    return -value / scale_lo;
   }
   else
   {
-    return (value * accel_inv_scale - offset) / (scale_hi - offset);
+    return value / scale_hi;
   }
 }
 
