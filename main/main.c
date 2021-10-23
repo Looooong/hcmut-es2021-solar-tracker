@@ -7,6 +7,7 @@
 #include <freertos/task.h>
 #include <freertos/timers.h>
 #include <math.h>
+#include <mpu9250.h>
 #include <nvs_flash.h>
 #include <sys/time.h>
 #include "cloud_client.h"
@@ -50,6 +51,7 @@ static system_state_t system_state = {
 };
 static double platform_rotation_updated_at;
 
+static void initialize_mpu9250();
 static void initialize_sntp();
 static void initialize_timezone();
 static void notify_sntp_sync(struct timeval *tv);
@@ -70,15 +72,16 @@ void app_main(void)
     bool is_connected = false;
     initialise_wifi(&is_connected);
 
+    initialize_mpu9250();
+    motors_init(GPIO_NUM_33, GPIO_NUM_32,
+                GPIO_NUM_35, GPIO_NUM_34);
+
     while (!is_connected)
         vTaskDelay(pdMS_TO_TICKS(100));
 
     initialize_sntp();
 
     cloud_client_init(cloud_client_data_handler);
-    motors_init(
-        GPIO_NUM_13, GPIO_NUM_4,
-        GPIO_NUM_17, GPIO_NUM_16);
 
     TimerHandle_t motors_timer = xTimerCreate("Motors", pdMS_TO_TICKS(100), pdTRUE, NULL, motors_timer_callback);
     xTimerStart(motors_timer, pdMS_TO_TICKS(1000));
@@ -93,6 +96,20 @@ void app_main(void)
     ESP_LOGI("System state", "Will be uploaded in 1.05 second.");
 
     ESP_LOGI("Solar tracker", "Initialized.");
+}
+
+static void initialize_mpu9250()
+{
+    calibration_t calibration = {
+        .mag_offset = {.x = 0.0, .y = 0.0, .z = 0.0},
+        .mag_scale = {.x = 1.0, .y = 1.0, .z = 1.0},
+        .accel_offset = {.x = 0.0, .y = 0.0, .z = 0.0},
+        .accel_scale_lo = {.x = -1.0, .y = -1.0, .z = -1.0},
+        .accel_scale_hi = {.x = 1.0, .y = 1.0, .z = 1.0},
+        .gyro_bias_offset = {.x = 0.0, .y = 0.0, .z = 0.0}};
+
+    choose_SCL_SDA_GPIO(GPIO_NUM_15, GPIO_NUM_2);
+    i2c_mpu9250_init(&calibration);
 }
 
 static void initialize_sntp()
@@ -164,10 +181,16 @@ static void motors_timer_callback(TimerHandle_t timer)
 
 static void update_platform_rotation(TimerHandle_t timer)
 {
-    // TODO: Read sensor data
-    vector3_t accel = {0.f, 0.f, 1.f};
-    vector3_t gyro = {0.f, 0.f, 0.f};
-    vector3_t magnet = {1.f, 0.f, 0.f};
+    vector_t va, vg, vm;
+    ESP_ERROR_CHECK(get_accel_gyro_mag(&va, &vg, &vm));
+
+    vector3_t accel = {va.x, va.y, va.z};
+    vector3_t gyro = {vg.x, vg.y, vg.z};
+    vector3_t magnet = {vm.x, vm.y, vm.z};
+
+    // vector3_t accel = {0.f, 0.f, 1.f};
+    // vector3_t gyro = {0.f, 0.f, 0.f};
+    // vector3_t magnet = {1.f, 0.f, 0.f};
 
     double current_time = gettimeofday_combined();
     float dt = platform_rotation_updated_at == 0.f ? 0.f : current_time - platform_rotation_updated_at;
