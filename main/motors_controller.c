@@ -3,12 +3,15 @@
 #include <math.h>
 #include "motors_controller.h"
 
-static const float azimuth_0_degrees_duty_cycle = .05f;
-static const float azimuth_360_degrees_duty_cycle = .1f;
-static const float inclination_0_degrees_duty_cycle = .05f;
-static const float inclination_180_degrees_duty_cycle = .1f;
+static const float azimuth_0_degrees_duty_cycle = .02f;
+static const float azimuth_360_degrees_duty_cycle = .12f;
+static const float inclination_0_degrees_duty_cycle = .02f;
+static const float inclination_180_degrees_duty_cycle = .12f;
 
-static orientation_t current_orientation;
+static orientation_t current_orientation = {
+    .azimuth = 1000.f,
+    .inclination = 1000.f,
+};
 
 static unsigned int target_duty_azimuth(float azimuth);
 static unsigned int target_duty_inclination(float inclination);
@@ -21,7 +24,7 @@ void motors_init(
     gpio_config_t enable_gpio_config = {
         .pin_bit_mask = BIT(azimuth_enable_gpio) | BIT(inclination_enable_gpio),
         .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
@@ -49,6 +52,8 @@ void motors_init(
     };
 
     ESP_ERROR_CHECK(gpio_config(&enable_gpio_config));
+    ESP_ERROR_CHECK(gpio_set_level(azimuth_enable_gpio, 1));
+    ESP_ERROR_CHECK(gpio_set_level(inclination_enable_gpio, 1));
     ESP_ERROR_CHECK(ledc_timer_config(&timer_config));
     ESP_ERROR_CHECK(ledc_channel_config(&azimuth_channel_config));
     ESP_ERROR_CHECK(ledc_channel_config(&inclination_channel_config));
@@ -59,7 +64,7 @@ void motors_rotate(orientation_t orientation)
 {
     bool is_dirty = false;
 
-    if (fabs(orientation.azimuth - current_orientation.azimuth) > .001f)
+    if (fabs(orientation.azimuth - current_orientation.azimuth) > .01f)
     {
         ledc_set_duty(
             LEDC_HIGH_SPEED_MODE,
@@ -72,7 +77,7 @@ void motors_rotate(orientation_t orientation)
         is_dirty = true;
     }
 
-    if (fabs(orientation.inclination - current_orientation.inclination) > .001f)
+    if (fabs(orientation.inclination - current_orientation.inclination) > .01f)
     {
         ledc_set_duty(
             LEDC_HIGH_SPEED_MODE,
@@ -94,10 +99,10 @@ void motors_rotate(orientation_t orientation)
 
 static unsigned int target_duty_azimuth(float azimuth)
 {
-    return 1024.f * (azimuth_0_degrees_duty_cycle + (azimuth / 360.f) * (azimuth_360_degrees_duty_cycle - azimuth_0_degrees_duty_cycle));
+    return 1024.f * (azimuth_360_degrees_duty_cycle - (azimuth / 180.f) * (azimuth_360_degrees_duty_cycle - azimuth_0_degrees_duty_cycle));
 }
 
 static unsigned int target_duty_inclination(float inclination)
 {
-    return 1024.f * (inclination_0_degrees_duty_cycle + (inclination / 180.f) * (inclination_180_degrees_duty_cycle - inclination_0_degrees_duty_cycle));
+    return 1024.f * (inclination_0_degrees_duty_cycle + (inclination / 180.f + .5f) * (inclination_180_degrees_duty_cycle - inclination_0_degrees_duty_cycle));
 }

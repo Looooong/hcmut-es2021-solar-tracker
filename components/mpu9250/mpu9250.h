@@ -31,8 +31,8 @@
 //   https://www.invensense.com/wp-content/uploads/2015/02/MPU-9250-Register-Map.pdf
 
 #define MPU9250_I2C_ADDRESS_AD0_LOW (0x68)
-#define MPU9250_I2C_ADDR MPU9250_I2C_ADDRESS_AD0_LOW
 #define MPU9250_I2C_ADDRESS_AD0_HIGH (0x69)
+#define MPU9250_I2C_ADDR MPU9250_I2C_ADDRESS_AD0_HIGH
 #define MPU9250_WHO_AM_I (0x75)
 
 #define MPU9250_RA_CONFIG (0x1A)

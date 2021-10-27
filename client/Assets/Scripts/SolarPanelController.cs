@@ -30,12 +30,14 @@ public class SolarPanelController : MonoBehaviour
     public Transform platformIndicator;
 
     [Header("Charts")]
-    public TMP_Text solarPanelVoltageValueText;
-    public GraphChart solarPanelVoltageChart;
     public TMP_Text solarPanelAzimuthValueText;
     public GraphChart solarPanelAzimuthChart;
     public TMP_Text solarPanelInclinationValueText;
     public GraphChart solarPanelInclinationChart;
+    public TMP_Text azimuthMotorValueText;
+    public GraphChart azimuthMotorChart;
+    public TMP_Text inclinationMotorValueText;
+    public GraphChart inclinationMotorChart;
 
     Orientation _lastOrientation;
     SystemState _currentState;
@@ -44,9 +46,10 @@ public class SolarPanelController : MonoBehaviour
     public void AddSystemState(SystemState state)
     {
         var time = DateTimeOffset.FromUnixTimeMilliseconds(state.timestamp).UtcDateTime;
-        solarPanelVoltageChart.DataSource.AddPointToCategoryRealtime("Solar Panel Voltage", time, state.solarPanelVoltage, .1f);
-        solarPanelAzimuthChart.DataSource.AddPointToCategoryRealtime("Solar Panel Azimuth", time, state.solarPanelOrientation.azimuth, .1f);
-        solarPanelInclinationChart.DataSource.AddPointToCategoryRealtime("Solar Panel Inclination", time, state.solarPanelOrientation.inclination, .1f);
+        solarPanelAzimuthChart.DataSource.AddPointToCategoryRealtime("Solar Panel Azimuth", time, state.panelOrientation.azimuth, .1f);
+        solarPanelInclinationChart.DataSource.AddPointToCategoryRealtime("Solar Panel Inclination", time, state.panelOrientation.inclination, .1f);
+        azimuthMotorChart.DataSource.AddPointToCategoryRealtime("Solar Panel Azimuth", time, state.motorsRotation.azimuth, .1f);
+        inclinationMotorChart.DataSource.AddPointToCategoryRealtime("Solar Panel Inclination", time, state.motorsRotation.inclination, .1f);
         _currentState = state;
         UpdateUI();
     }
@@ -124,9 +127,10 @@ public class SolarPanelController : MonoBehaviour
 
         modeDropdown.SetValueWithoutNotify((int)controlConfig.controlMode);
 
-        solarPanelVoltageValueText.text = _currentState.solarPanelVoltage.ToString("0.000V");
-        solarPanelAzimuthValueText.text = _currentState.solarPanelOrientation.azimuth.ToString("0.000°");
-        solarPanelInclinationValueText.text = _currentState.solarPanelOrientation.inclination.ToString("0.000°");
+        solarPanelAzimuthValueText.text = _currentState.panelOrientation.azimuth.ToString("0.000°");
+        solarPanelInclinationValueText.text = _currentState.panelOrientation.inclination.ToString("0.000°");
+        azimuthMotorValueText.text = _currentState.motorsRotation.azimuth.ToString("0.000°");
+        inclinationMotorValueText.text = _currentState.motorsRotation.inclination.ToString("0.000°");
 
         if (isManual)
         {
@@ -137,8 +141,8 @@ public class SolarPanelController : MonoBehaviour
         }
         else
         {
-            azimuthInputField.SetTextWithoutNotify(_currentState.solarPanelOrientation.azimuth.ToString());
-            inclinationInputField.SetTextWithoutNotify(_currentState.solarPanelOrientation.inclination.ToString());
+            azimuthInputField.SetTextWithoutNotify(_currentState.panelOrientation.azimuth.ToString());
+            inclinationInputField.SetTextWithoutNotify(_currentState.panelOrientation.inclination.ToString());
         }
 
         platformIndicator.rotation = (

@@ -4,7 +4,7 @@
 
 const esp_websocket_client_config_t config = {
     // .uri = "wss://hcmut-es2021-solar-tracker.herokuapp.com/ws",
-    .uri = "ws://192.168.1.3:8080/ws", // Localhost testing
+    .uri = "ws://192.168.1.5:8080/ws", // Localhost testing
 };
 esp_websocket_client_handle_t client;
 cloud_client_data_handler_t external_data_handler;
@@ -54,7 +54,10 @@ void cloud_client_init(cloud_client_data_handler_t data_handler)
     esp_websocket_register_events(client, WEBSOCKET_EVENT_CONNECTED, cloud_client_connected_handler, NULL);
     esp_websocket_register_events(client, WEBSOCKET_EVENT_DISCONNECTED, cloud_client_disconnected_handler, NULL);
 
-    if (esp_websocket_client_start(client) != ESP_OK)
+    if (esp_websocket_client_start(client) == ESP_OK)
+    {
+        ESP_LOGI("Cloud Client", "Connecting to: %s", config.uri);
+    } else
     {
         ESP_LOGE("Cloud Client", "Cannot connect start WebSocket client!");
     }

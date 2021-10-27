@@ -29,13 +29,10 @@ interface ControlConfig {
 }
 
 interface SystemState {
-    timestamp: number,
-    solarPanelCurrent: number,
-    solarPanelVoltage: number,
-    batteryVoltage: number,
-    solarPanelOrientation: Orientation,
-    motorsRotation: Orientation,
     platformRotation: Quaternion,
+    panelOrientation: Orientation,
+    motorsRotation: Orientation,
+    timestamp: number,
 }
 
 interface Orientation {
@@ -51,7 +48,7 @@ interface Quaternion {
 }
 
 let config = {
-    controlMode: ControlMode.Automatic,
+    controlMode: ControlMode.Manual,
     manualOrientation: {
         azimuth: 0.0,
         inclination: 0.0,
@@ -114,7 +111,7 @@ wss.on(AppEvent.UpdateConfig, (ws: WebSocket, new_config: ControlConfig) => {
     config.manualOrientation = new_config.manualOrientation ?? config.manualOrientation;
 
     for (let client of wss.clients) {
-        if (client == ws) continue;
+        if (new_config && client == ws) continue;
 
         client.emit(AppEvent.UpdateConfig);
     }
@@ -126,33 +123,6 @@ wss.on(AppEvent.UpdateState, (ws: WebSocket, new_state: SystemState) => {
 
         client.emit(AppEvent.UpdateState, new_state);
     }
-});
-
-wss.on('FAKE_DATA', (ws: WebSocket) => {
-    return;
-    let fakeDataInterval = setInterval(() => {
-        let timestamp = Date.now();
-        let solarPanelVoltage = 5 * Math.cos(timestamp / 1000 * 3 % 360 * 2 * Math.PI / 360) + 5;
-        let solarPanelOrientation: Orientation = {
-            azimuth: 0,
-            inclination: 0,
-        };
-
-        if (config.controlMode == ControlMode.Manual) {
-            solarPanelOrientation = config.manualOrientation ?? solarPanelOrientation;
-        } else {
-            solarPanelOrientation.azimuth = timestamp / 1000 * 30 % 360;
-            solarPanelOrientation.inclination = 90 * (0.5 * Math.sin(solarPanelOrientation.azimuth * 2 * Math.PI / 360) + 0.5);
-        }
-
-        ws.emit(AppEvent.UpdateState, {
-            timestamp,
-            solarPanelVoltage,
-            solarPanelOrientation,
-        } as SystemState);
-    }, 100);
-
-    ws.on('close', () => clearInterval(fakeDataInterval));
 });
 
 const port = parseInt(process.env['PORT'] ?? '8080');
